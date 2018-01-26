@@ -41,20 +41,23 @@ public:
     /** Create a client connected to the cluster specified by \c conn_string.
      *
      *  \param conn_string A ZooKeeper \ref ConnectionStrings "connection string".
-     *  \returns A future which will be filled when the conneciton is established. The future will be filled in error if
+     *  \returns A future which will be filled when the connection is established. The future will be filled in error if
      *   the client will never be able to connect to the cluster (for example: a bad connection string).
     **/
     static future<client> connect(string_view conn_string);
 
-    client(const client&) noexcept = default;
-    client(client&&) noexcept = default;
+    client(client&&) noexcept;
 
-    client& operator=(const client&) noexcept = default;
-    client& operator=(client&&) noexcept = default;
+    client& operator=(client&&) noexcept;
 
     ~client() noexcept;
 
-    void close();
+    /** Close the underlying connection.
+     *
+     *  \param wait_for_stop If \c true, wait until all the callbacks are delivered and the client thread has stopped
+     *   running before returning control to the caller. If \c false, simply start the close process.
+    **/
+    void close(bool wait_for_stop = true);
 
     /** Return the data and the \c stat of the entry of the given \a path.
      *
@@ -218,7 +221,9 @@ public:
     future<multi_result> commit(multi_op txn);
 
 private:
-    std::shared_ptr<connection> _conn;
+    struct impl;
+
+    std::unique_ptr<impl> _impl;
 };
 
 /** \} **/

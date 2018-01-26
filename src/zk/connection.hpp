@@ -5,7 +5,6 @@
 #include <chrono>
 #include <iosfwd>
 #include <memory>
-#include <mutex>
 #include <string>
 #include <vector>
 
@@ -21,8 +20,19 @@ namespace zk
  *  \{
 **/
 
+/**
+ *
+ *  \warning
+ *  A \c connection is not thread-safe -- the caller must synchronize access to it. If you are using \c client, this is
+ *  done for you. See the \c receive function for more information.
+**/
 class connection
 {
+public:
+    using native_handle_type = int;
+
+    using size_type = std::size_t;
+
 public:
     static std::shared_ptr<connection> connect(const connection_params&);
 
@@ -30,52 +40,39 @@ public:
 
     virtual ~connection() noexcept;
 
+    /** Close the connection. Realistically, this merely submits a close operation to the system. Do not assume the
+     *  connection is fully closed until \c receive returns an \c event with \c state::closed.
+    **/
     virtual void close() = 0;
 
-    virtual future<get_result> get(string_view path) = 0;
+    virtual void submit(op,       ptr<void> track) = 0;
+    virtual void submit(watch_op, ptr<void> track) = 0;
+    virtual void submit(multi_op, ptr<void> track) = 0;
 
-    virtual future<watch_result> watch(string_view path) = 0;
-
-    virtual future<get_children_result> get_children(string_view path) = 0;
-
-    virtual future<watch_children_result> watch_children(string_view path) = 0;
-
-    virtual future<exists_result> exists(string_view path) = 0;
-
-    virtual future<watch_exists_result> watch_exists(string_view path) = 0;
-
-    virtual future<create_result> create(string_view   path,
-                                         const buffer& data,
-                                         const acl&    rules,
-                                         create_mode   mode
-                                        ) = 0;
-
-    virtual future<set_result> set(string_view path, const buffer& data, version check) = 0;
-
-    virtual future<void> erase(string_view path, version check) = 0;
-
-    virtual future<get_acl_result> get_acl(string_view path) const = 0;
-
-    virtual future<void> set_acl(string_view path, const acl& rules, acl_version check) = 0;
-
-    virtual future<multi_result> commit(multi_op&& txn) = 0;
-
-    virtual future<void> load_fence() = 0;
-
-    virtual zk::state state() const = 0;
-
-    /** Watch for a state change. **/
-    virtual future<zk::state> watch_state();
-
-protected:
-    /** Call this from derived classes when a session event happens. This triggers the delivery of all promises of state
-     *  changes (issued through \c watch_state).
+    /** Receive at most \a max notifications from the connection and place them in \a out. If there are no notifications
+     *  to receive, this function will return immediately.
+     *
+     *  \param out A pointer to the location to write received notifications to. It should have at least \a max elements
+     *   to write to.
+     *  \param max The maximum number of notifications to receive.
+     *  \returns The number of notifications written to \a out. This will always be fewer than \a max.
+     *
+     *  \note
+     *  There is no logical way to have \c receive work across multiple threads. Concurrent callers would receive
+     *  different sets of returned notifications. If you wish to have a multi-threaded notification delivery mechanism,
+     *  you can build one using this low-level system.
     **/
-    virtual void on_session_event(zk::state new_state);
+    virtual size_type receive(ptr<notification> out, size_type max) noexcept;
 
-private:
-    mutable std::mutex              _state_change_promises_protect;
-    std::vector<promise<zk::state>> _state_change_promises;
+    /** Get the native handle, which can be used to tie into event systems such as \c epoll. The handle will become
+     *  readable when \c receive will return at least one notification without blocking.
+    **/
+    virtual native_handle_type native_handle() = 0;
+
+    /** Get the current state of the conneciton. Most state changes should be seen through a \c notification seen
+     *  through \c receive, but this can be helpful for debugging.
+    **/
+    virtual zk::state state() const = 0;
 };
 
 /** Used to specify parameters for a \c connection. This can either be created manually or through a
