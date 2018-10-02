@@ -50,15 +50,15 @@ public:
 
     virtual future<set_result> set(string_view path, const buffer& data, version check) override;
 
-    virtual future<void> erase(string_view path, version check) override;
+    virtual future<promise_void> erase(string_view path, version check) override;
 
     virtual future<get_acl_result> get_acl(string_view path) const override;
 
-    virtual future<void> set_acl(string_view path, const acl& rules, acl_version check) override;
+    virtual future<promise_void> set_acl(string_view path, const acl& rules, acl_version check) override;
 
     virtual future<multi_result> commit(multi_op&& txn) override;
 
-    virtual future<void> load_fence() override;
+    virtual future<promise_void> load_fence() override;
 
 private:
     static void on_session_event_raw(ptr<zhandle_t>  handle,

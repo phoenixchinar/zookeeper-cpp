@@ -8,6 +8,7 @@
 #ifdef ZKPP_USER_CONFIG
 #   include ZKPP_USER_CONFIG
 #endif
+#include "zkpp_user_config.h"
 
 #define ZKPP_VERSION_MAJOR 0
 #define ZKPP_VERSION_MINOR 2

@@ -36,7 +36,7 @@ future<zk::state> connection::watch_state()
 {
     std::unique_lock<std::mutex> ax(_state_change_promises_protect);
     _state_change_promises.emplace_back();
-    return _state_change_promises.rbegin()->get_future();
+    return _state_change_promises.rbegin()->getFuture();
 }
 
 void connection::on_session_event(zk::state new_state)
@@ -52,9 +52,9 @@ void connection::on_session_event(zk::state new_state)
     for (auto& p : l_state_change_promises)
     {
         if (ex)
-            p.set_exception(ex);
+            p.setException(folly::exception_wrapper::from_exception_ptr(ex));
         else
-            p.set_value(new_state);
+            p.setValue(new_state);
     }
 }
 

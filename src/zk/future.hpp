@@ -52,10 +52,12 @@
 #   define ZKPP_FUTURE_INCLUDE   <future>
 #   define ZKPP_FUTURE_TEMPLATE  std::future
 #   define ZKPP_PROMISE_TEMPLATE std::promise
+#   define ZKPP_PROMISE_VOID void
 #elif ZKPP_FUTURE_USE_STD_EXPERIMENTAL
 #   define ZKPP_FUTURE_INCLUDE   <experimental/future>
 #   define ZKPP_FUTURE_TEMPLATE  std::experimental::future
 #   define ZKPP_PROMISE_TEMPLATE std::experimental::promise
+#   define ZKPP_PROMISE_VOID void
 #elif ZKPP_FUTURE_USE_CUSTOM
 #   if !defined ZKPP_FUTURE_TEMPLATE || !defined ZKPP_PROMISE_TEMPLATE || !defined ZKPP_FUTURE_INCLUDE
 #       error "When ZKPP_FUTURE_USE_CUSTOM is set, you must also define ZKPP_FUTURE_TEMPLATE, ZKPP_PROMISE_TEMPLATE,"
@@ -81,6 +83,8 @@ using future = ZKPP_FUTURE_TEMPLATE<T>;
 
 template <typename T>
 using promise = ZKPP_PROMISE_TEMPLATE<T>;
+
+using promise_void = ZKPP_PROMISE_VOID;
 
 /** \} **/
 

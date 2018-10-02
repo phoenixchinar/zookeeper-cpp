@@ -89,6 +89,8 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 
 find_library(zookeeper_LIBRARIES zookeeper_mt)
 
+find_library(folly_LIBRARIES folly)
+
 include_directories("${PROJECT_SOURCE_DIR}/src")
 
 ################################################################################
@@ -147,6 +149,7 @@ build_module(NAME zkpp
              NO_RECURSE
              LINK_LIBRARIES
                ${zookeeper_LIBRARIES}
+               ${folly_LIBRARIES}
             )
 
 build_module(NAME zkpp-server

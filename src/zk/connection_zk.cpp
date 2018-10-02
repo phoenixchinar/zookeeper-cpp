@@ -216,13 +216,13 @@ public:
     {
         if (!_event_delivered.exchange(true, std::memory_order_relaxed))
         {
-            _event_promise.set_value(std::move(ev));
+            _event_promise.setValue(std::move(ev));
         }
     }
 
     future<event> get_event_future()
     {
-        return _event_promise.get_future();
+        return _event_promise.getFuture();
     }
 
 protected:
@@ -241,7 +241,7 @@ public:
 
     future<TResult> get_data_future()
     {
-        return _data_promise.get_future();
+        return _data_promise.getFuture();
     }
 
     virtual void deliver_event(event ev) override
@@ -260,11 +260,11 @@ public:
         {
             if (ex_ptr)
             {
-                _data_promise.set_exception(std::move(ex_ptr));
+                _data_promise.setException(folly::exception_wrapper::from_exception_ptr(std::move(ex_ptr)));
             }
             else
             {
-                _data_promise.set_value(std::move(*data));
+                _data_promise.setValue(std::move(*data));
             }
         }
     }
@@ -336,15 +336,15 @@ future<get_result> connection_zk::get(string_view path)
             std::unique_ptr<promise<get_result>> prom((ptr<promise<get_result>>) prom_in);
             auto rc = error_code_from_raw(rc_in);
             if (rc == error_code::ok)
-                prom->set_value(get_result(buffer(data, data + data_sz), stat_from_raw(*pstat)));
+                prom->setValue(get_result(buffer(data, data + data_sz), stat_from_raw(*pstat)));
             else
-                prom->set_exception(get_exception_ptr_of(rc));
+                prom->setException(folly::exception_wrapper::from_exception_ptr(get_exception_ptr_of(rc)));
         };
 
     return with_str(path, [&] (ptr<const char> path) noexcept
     {
         auto ppromise = std::make_unique<promise<get_result>>();
-        auto fut      = ppromise->get_future();
+        auto fut      = ppromise->getFuture();
         auto rc = error_code_from_raw(::zoo_aget(_handle, path, 0, callback, ppromise.get()));
         if (rc == error_code::ok)
         {
@@ -353,7 +353,7 @@ future<get_result> connection_zk::get(string_view path)
         }
         else
         {
-            ppromise->set_exception(get_exception_ptr_of(rc));
+            ppromise->setException(folly::exception_wrapper::from_exception_ptr(get_exception_ptr_of(rc)));
             return fut;
         }
     });
@@ -427,18 +427,18 @@ future<get_children_result> connection_zk::get_children(string_view path)
                 if (rc != error_code::ok)
                     throw_error(rc);
 
-                prom->set_value(get_children_result(string_vector_from_raw(*strings_in), stat_from_raw(*stat_in)));
+                prom->setValue(get_children_result(string_vector_from_raw(*strings_in), stat_from_raw(*stat_in)));
             }
             catch (...)
             {
-                prom->set_exception(std::current_exception());
+                prom->setException(folly::exception_wrapper::from_exception_ptr(std::current_exception()));
             }
         };
 
     return with_str(path, [&] (ptr<const char> path) noexcept
     {
         auto ppromise = std::make_unique<promise<get_children_result>>();
-        auto fut      = ppromise->get_future();
+        auto fut      = ppromise->getFuture();
         auto rc       = error_code_from_raw(::zoo_aget_children2(_handle,
                                                                  path,
                                                                  0,
@@ -453,7 +453,7 @@ future<get_children_result> connection_zk::get_children(string_view path)
         }
         else
         {
-            ppromise->set_exception(get_exception_ptr_of(rc));
+            ppromise->setException(folly::exception_wrapper::from_exception_ptr(get_exception_ptr_of(rc)));
             return fut;
         }
     });
@@ -524,17 +524,17 @@ future<exists_result> connection_zk::exists(string_view path)
             std::unique_ptr<promise<exists_result>> prom((ptr<promise<exists_result>>) prom_in);
             auto rc = error_code_from_raw(rc_in);
             if (rc == error_code::ok)
-                prom->set_value(exists_result(stat_from_raw(*stat_in)));
+                prom->setValue(exists_result(stat_from_raw(*stat_in)));
             else if (rc == error_code::no_entry)
-                prom->set_value(exists_result(nullopt));
+                prom->setValue(exists_result(nullopt));
             else
-                prom->set_exception(get_exception_ptr_of(rc));
+                prom->setException(folly::exception_wrapper::from_exception_ptr(get_exception_ptr_of(rc)));
         };
 
     return with_str(path, [&] (ptr<const char> path) noexcept
     {
         auto ppromise = std::make_unique<promise<exists_result>>();
-        auto fut      = ppromise->get_future();
+        auto fut      = ppromise->getFuture();
         auto rc       = error_code_from_raw(::zoo_aexists(_handle, path, 0, callback, ppromise.get()));
         if (rc == error_code::ok)
         {
@@ -543,7 +543,7 @@ future<exists_result> connection_zk::exists(string_view path)
         }
         else
         {
-            ppromise->set_exception(get_exception_ptr_of(rc));
+            ppromise->setException(folly::exception_wrapper::from_exception_ptr(get_exception_ptr_of(rc)));
             return fut;
         }
     });
@@ -612,15 +612,15 @@ future<create_result> connection_zk::create(string_view   path,
             std::unique_ptr<promise<create_result>> prom((ptr<promise<create_result>>) prom_in);
             auto rc = error_code_from_raw(rc_in);
             if (rc == error_code::ok)
-                prom->set_value(create_result(std::string(name_in)));
+                prom->setValue(create_result(std::string(name_in)));
             else
-                prom->set_exception(get_exception_ptr_of(rc));
+                prom->setException(folly::exception_wrapper::from_exception_ptr(get_exception_ptr_of(rc)));
         };
 
         return with_str(path, [&] (ptr<const char> path) noexcept
         {
             auto ppromise = std::make_unique<promise<create_result>>();
-            auto fut      = ppromise->get_future();
+            auto fut      = ppromise->getFuture();
             auto rc       = with_acl(rules, [&] (ptr<const ACL_vector> rules) noexcept
             {
                 return error_code_from_raw(::zoo_acreate(_handle,
@@ -642,7 +642,7 @@ future<create_result> connection_zk::create(string_view   path,
             }
             else
             {
-                ppromise->set_exception(get_exception_ptr_of(rc));
+                ppromise->setException(folly::exception_wrapper::from_exception_ptr(get_exception_ptr_of(rc)));
                 return fut;
             }
         });
@@ -656,15 +656,15 @@ future<set_result> connection_zk::set(string_view path, const buffer& data, vers
             std::unique_ptr<promise<set_result>> prom((ptr<promise<set_result>>) prom_in);
             auto rc = error_code_from_raw(rc_in);
             if (rc == error_code::ok)
-                prom->set_value(set_result(stat_from_raw(*stat_raw)));
+                prom->setValue(set_result(stat_from_raw(*stat_raw)));
             else
-                prom->set_exception(get_exception_ptr_of(rc));
+                prom->setException(folly::exception_wrapper::from_exception_ptr(get_exception_ptr_of(rc)));
         };
 
     return with_str(path, [&] (ptr<const char> path) noexcept
     {
         auto ppromise = std::make_unique<promise<set_result>>();
-        auto fut      = ppromise->get_future();
+        auto fut      = ppromise->getFuture();
         auto rc       = error_code_from_raw(::zoo_aset(_handle,
                                                        path,
                                                        data.data(),
@@ -681,29 +681,29 @@ future<set_result> connection_zk::set(string_view path, const buffer& data, vers
         }
         else
         {
-            ppromise->set_exception(get_exception_ptr_of(rc));
+            ppromise->setException(folly::exception_wrapper::from_exception_ptr(get_exception_ptr_of(rc)));
             return fut;
         }
     });
 }
 
-future<void> connection_zk::erase(string_view path, version check)
+future<promise_void> connection_zk::erase(string_view path, version check)
 {
     ::void_completion_t callback =
         [] (int rc_in, ptr<const void> prom_in)
         {
-            std::unique_ptr<promise<void>> prom((ptr<promise<void>>) prom_in);
+            std::unique_ptr<promise<promise_void>> prom((ptr<promise<promise_void>>) prom_in);
             auto rc = error_code_from_raw(rc_in);
             if (rc == error_code::ok)
-                prom->set_value();
+                prom->setValue();
             else
-                prom->set_exception(get_exception_ptr_of(rc));
+                prom->setException(folly::exception_wrapper::from_exception_ptr(get_exception_ptr_of(rc)));
         };
 
     return with_str(path, [&] (ptr<const char> path) noexcept
     {
-        auto ppromise = std::make_unique<promise<void>>();
-        auto fut      = ppromise->get_future();
+        auto ppromise = std::make_unique<promise<promise_void>>();
+        auto fut      = ppromise->getFuture();
         auto rc       = error_code_from_raw(::zoo_adelete(_handle, path, check.value, callback, ppromise.get()));
         if (rc == error_code::ok)
         {
@@ -712,7 +712,7 @@ future<void> connection_zk::erase(string_view path, version check)
         }
         else
         {
-            ppromise->set_exception(get_exception_ptr_of(rc));
+            ppromise->setException(folly::exception_wrapper::from_exception_ptr(get_exception_ptr_of(rc)));
             return fut;
         }
     });
@@ -726,15 +726,15 @@ future<get_acl_result> connection_zk::get_acl(string_view path) const
             std::unique_ptr<promise<get_acl_result>> prom((ptr<promise<get_acl_result>>) prom_in);
             auto rc = error_code_from_raw(rc_in);
             if (rc == error_code::ok)
-                prom->set_value(get_acl_result(acl_from_raw(*acl_raw), stat_from_raw(*stat_raw)));
+                prom->setValue(get_acl_result(acl_from_raw(*acl_raw), stat_from_raw(*stat_raw)));
             else
-                prom->set_exception(get_exception_ptr_of(rc));
+                prom->setException(folly::exception_wrapper::from_exception_ptr(get_exception_ptr_of(rc)));
         };
 
     return with_str(path, [&] (ptr<const char> path) noexcept
     {
         auto ppromise = std::make_unique<promise<get_acl_result>>();
-        auto fut      = ppromise->get_future();
+        auto fut      = ppromise->getFuture();
         auto rc       = error_code_from_raw(::zoo_aget_acl(_handle, path, callback, ppromise.get()));
         if (rc == error_code::ok)
         {
@@ -743,31 +743,31 @@ future<get_acl_result> connection_zk::get_acl(string_view path) const
         }
         else
         {
-            ppromise->set_exception(get_exception_ptr_of(rc));
+            ppromise->setException(folly::exception_wrapper::from_exception_ptr(get_exception_ptr_of(rc)));
             return fut;
         }
     });
 }
 
-future<void> connection_zk::set_acl(string_view path, const acl& rules, acl_version check)
+future<promise_void> connection_zk::set_acl(string_view path, const acl& rules, acl_version check)
 {
     ::void_completion_t callback =
         [] (int rc_in, ptr<const void> prom_in)
         {
-            std::unique_ptr<promise<void>> prom((ptr<promise<void>>) prom_in);
+            std::unique_ptr<promise<promise_void>> prom((ptr<promise<promise_void>>) prom_in);
             auto rc = error_code_from_raw(rc_in);
             if (rc == error_code::ok)
-                prom->set_value();
+                prom->setValue();
             else
-                prom->set_exception(get_exception_ptr_of(rc));
+                prom->setException(folly::exception_wrapper::from_exception_ptr(get_exception_ptr_of(rc)));
         };
 
     return with_str(path, [&] (ptr<const char> path) noexcept
     {
         return with_acl(rules, [&] (ptr<struct ACL_vector> rules) noexcept
         {
-            auto ppromise = std::make_unique<promise<void>>();
-            auto fut      = ppromise->get_future();
+            auto ppromise = std::make_unique<promise<promise_void>>();
+            auto fut      = ppromise->getFuture();
             auto rc       = error_code_from_raw(::zoo_aset_acl(_handle,
                                                                path,
                                                                check.value,
@@ -783,7 +783,7 @@ future<void> connection_zk::set_acl(string_view path, const acl& rules, acl_vers
             }
             else
             {
-                ppromise->set_exception(get_exception_ptr_of(rc));
+                ppromise->setException(folly::exception_wrapper::from_exception_ptr(get_exception_ptr_of(rc)));
                 return fut;
             }
         });
@@ -845,7 +845,7 @@ struct connection_zk_commit_completer
                     }
                 }
 
-                prom.set_value(std::move(out));
+                prom.setValue(std::move(out));
             }
             else
             {
@@ -858,7 +858,7 @@ struct connection_zk_commit_completer
         }
         catch (...)
         {
-            prom.set_exception(std::current_exception());
+            prom.setException(folly::exception_wrapper::from_exception_ptr(std::current_exception()));
         }
     }
 };
@@ -960,48 +960,48 @@ future<multi_result> connection_zk::commit(multi_op&& txn_in)
                                      );
         if (rc == error_code::ok)
         {
-            auto f = pcompleter->prom.get_future();
+            auto f = pcompleter->prom.getFuture();
             pcompleter.release();
             return f;
         }
         else
         {
-            pcompleter->prom.set_exception(get_exception_ptr_of(rc));
-            return pcompleter->prom.get_future();
+            pcompleter->prom.setException(folly::exception_wrapper::from_exception_ptr(get_exception_ptr_of(rc)));
+            return pcompleter->prom.getFuture();
         }
     }
     catch (...)
     {
-        pcompleter->prom.set_exception(std::current_exception());
-        return pcompleter->prom.get_future();
+        pcompleter->prom.setException(folly::exception_wrapper::from_exception_ptr(std::current_exception()));
+        return pcompleter->prom.getFuture();
     }
 }
 
-future<void> connection_zk::load_fence()
+future<promise_void> connection_zk::load_fence()
 {
     ::string_completion_t callback =
         [] (int rc_in, ptr<const char>, ptr<const void> prom_in)
         {
-            std::unique_ptr<promise<void>> prom((ptr<promise<void>>) prom_in);
+            std::unique_ptr<promise<promise_void>> prom((ptr<promise<promise_void>>) prom_in);
             auto rc = error_code_from_raw(rc_in);
             if (rc == error_code::ok)
-                prom->set_value();
+                prom->setValue();
             else
-                prom->set_exception(get_exception_ptr_of(rc));
+                prom->setException(folly::exception_wrapper::from_exception_ptr(get_exception_ptr_of(rc)));
         };
 
-    auto ppromise = std::make_unique<std::promise<void>>();
+    auto ppromise = std::make_unique<promise<promise_void>>();
     auto rc = error_code_from_raw(::zoo_async(_handle, "/", callback, ppromise.get()));
     if (rc == error_code::ok)
     {
-        auto f = ppromise->get_future();
+        auto f = ppromise->getFuture();
         ppromise.release();
         return f;
     }
     else
     {
-        ppromise->set_exception(get_exception_ptr_of(rc));
-        return ppromise->get_future();
+        ppromise->setException(folly::exception_wrapper::from_exception_ptr(get_exception_ptr_of(rc)));
+        return ppromise->getFuture();
     }
 }
 

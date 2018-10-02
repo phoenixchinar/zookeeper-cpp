@@ -54,15 +54,15 @@ public:
 
     virtual future<set_result> set(string_view path, const buffer& data, version check) = 0;
 
-    virtual future<void> erase(string_view path, version check) = 0;
+    virtual future<promise_void> erase(string_view path, version check) = 0;
 
     virtual future<get_acl_result> get_acl(string_view path) const = 0;
 
-    virtual future<void> set_acl(string_view path, const acl& rules, acl_version check) = 0;
+    virtual future<promise_void> set_acl(string_view path, const acl& rules, acl_version check) = 0;
 
     virtual future<multi_result> commit(multi_op&& txn) = 0;
 
-    virtual future<void> load_fence() = 0;
+    virtual future<promise_void> load_fence() = 0;
 
     virtual zk::state state() const = 0;
 

@@ -156,7 +156,7 @@ public:
     /// \throws no_entry If no entry exists at the given \a path, the future will be delievered with \ref no_entry.
     /// \throws version_mismatch If the given version \a check does not match the entry's version, the future will be
     ///  delivered with \ref version_mismatch.
-    future<void> set_acl(string_view path, const acl& rules, acl_version check = acl_version::any());
+    future<promise_void> set_acl(string_view path, const acl& rules, acl_version check = acl_version::any());
 
     /// Erase the entry at the given \a path. The call will succeed if such an entry exists, and the given version
     /// \a check matches the entry's version (if the given version is \ref version::any, it matches any entry's
@@ -169,7 +169,7 @@ public:
     ///  delivered with \ref version_mismatch.
     /// \throws not_empty You are only allowed to erase entries with no children. If the entry has children, the future
     ///  will be delievered with \ref not_empty.
-    future<void> erase(string_view path, version check = version::any());
+    future<promise_void> erase(string_view path, version check = version::any());
 
     /// Ensure that all subsequent reads observe the data at the transaction on the server at or past real-time \e now.
     /// If your application communicates only through reads and writes of ZooKeeper, this operation is never needed.
@@ -203,7 +203,7 @@ public:
     /// // Useful to use when_all to concat and error check (C++ Extensions for Concurrency, ISO/IEC TS 19571:2016)
     /// auto guaranteed_future = std::when_all(std::move(fence_future), std::move(data_future));
     /// \endcode
-    future<void> load_fence() const;
+    future<promise_void> load_fence() const;
 
     /// Commit the transaction specified by \a txn. The operations are performed atomically: They will either all
     /// succeed or all fail.
