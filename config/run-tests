@@ -4,6 +4,7 @@ PROJECT_ROOT=$(readlink -f $(dirname $0)/..)
 BUILD_DIR=${PROJECT_ROOT}/build-ci
 echo "${DISTRO} ${PROJECT_ROOT}"
 c++ --version
+NUM_CORES=$(nproc || echo 6)
 
 if [[ -e ${BUILD_DIR} ]]; then
     echo "Build directory (${BUILD_DIR}) unclean -- deleting it"
@@ -20,7 +21,7 @@ else
 fi
 
 cmake .. -DZKPP_BUILD_OPTION_CODE_COVERAGE=${COVERAGE}
-make VERBOSE=1
+make -j $NUM_CORES VERBOSE=1
 make test
 
 if [[ ${COVERAGE} -eq 1 ]]; then
