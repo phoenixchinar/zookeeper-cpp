@@ -9,6 +9,7 @@
 
 #include <ftw.h>
 #include <unistd.h>
+#include <cstdlib>
 
 #include "classpath.hpp"
 #include "configuration.hpp"
@@ -46,7 +47,11 @@ void server_fixture::SetUp()
     _server = std::make_shared<server>(test_package_registry::instance().find_newest_classpath().value(),
                                        configuration::make_minimal("zk-data")
                                       );
-    _conn_string = "zk://127.0.0.1:2181";
+    auto env_conn_string = std::getenv("ZK");
+    if(env_conn_string)
+        _conn_string = env_conn_string;
+    else 
+        _conn_string = "zk://127.0.0.1:2181";
 }
 
 void server_fixture::TearDown()
