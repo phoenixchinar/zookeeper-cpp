@@ -380,9 +380,7 @@ public:
                                           ),
                               std::exception_ptr()
                              );
-        }
-        else
-        {
+        } else if(rc != error_code::connection_loss) {
             self.deliver_data(nullopt, get_exception_ptr_of(rc));
         }
     }
