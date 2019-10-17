@@ -296,6 +296,20 @@ void connection_zk::deliver_watch(ptr<zhandle_t>  zh,
                                   ptr<void>       proms_in
                                  )
 {
+    if(type_in == ZOO_SESSION_EVENT) { 
+	    // Without this it is causing issues when zk reconnects
+	    // and an exception of FutureAlreadyRetrieved is being thrown
+	    // Although there are checks to check if the address is valid and then
+	    // retrieve the shared object, but seems to still lack
+	    // some corner case. The issue is easily recreatable with a normal run
+	    // but takes much longer with an address sanitizer
+	    // To recreate the issue:
+	    //    cluster of 5 zk nodes
+	    //    add multiple watchers
+	    //    keep restarting nodes 1 by 1 causing session events
+	    //    the watchers should add themselves on error as well
+        return;
+    }
     auto& self = *connection_from_context(zh);
     if (auto watcher = self.try_extract_watch(proms_in))
         watcher->deliver_event(event(event_from_raw(type_in), state_from_raw(state_in)));
